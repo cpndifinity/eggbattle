@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>たまバト</title>
+    <link rel="stylesheet" href="./style.css?v=9" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="topbar" aria-label="ゲーム情報">
+        <div>
+          <p class="eyebrow">Virtual Pet Paradise</p>
+          <h1>たまバト</h1>
+        </div>
+        <div class="meters">
+          <div class="coin-pill" title="コイン">
+            <span aria-hidden="true">◆</span>
+            <strong id="coins">0</strong>
+          </div>
+          <button id="bgmBtn" class="icon-btn" type="button" title="BGM" aria-label="BGM">♪</button>
+          <button id="resetBtn" class="icon-btn danger" type="button" title="リセット" aria-label="リセット">↺</button>
+        </div>
+      </section>
+
+      <section class="field-tabs" aria-label="フィールド">
+        <button class="field-tab active" data-field="land" type="button">陸</button>
+        <button class="field-tab" data-field="sky" type="button">空</button>
+        <button class="field-tab" data-field="sea" type="button">海</button>
+      </section>
+
+      <section class="screen field-land" aria-label="ペットの楽園">
+        <div class="sky">
+          <div class="sun" aria-hidden="true"></div>
+          <div class="cloud cloud-a" aria-hidden="true"></div>
+          <div class="cloud cloud-b" aria-hidden="true"></div>
+        </div>
+        <div class="island">
+          <div class="tree" aria-hidden="true"></div>
+          <div class="pond" aria-hidden="true"></div>
+          <button id="petButton" class="pet-button egg" type="button" aria-label="ペット">
+            <span class="crest"></span>
+            <span class="pet-face">
+              <span class="eye left"></span>
+              <span class="eye right"></span>
+              <span class="mouth"></span>
+            </span>
+          </button>
+          <button id="poop" class="poop hidden" type="button" aria-label="うんち掃除">●</button>
+        </div>
+        <div id="speech" class="speech">タップして孵化！</div>
+      </section>
+
+      <section class="progress-card" aria-label="進化">
+        <div>
+          <span id="stageLabel">たまご</span>
+          <strong id="petName">まめた</strong>
+          <div class="name-row">
+            <input id="nameInput" type="text" maxlength="12" placeholder="進化後に名前" />
+            <button id="saveName" type="button">名付け</button>
+          </div>
+        </div>
+        <div class="xp-wrap">
+          <div id="xpBar" class="xp-bar"></div>
+        </div>
+        <div class="battle-record">
+          <span>進化 <strong id="evolveCount">0</strong></span>
+          <span>勝利 <strong id="wins">0</strong></span>
+          <span>ミス <strong id="mistakes">0</strong></span>
+        </div>
+      </section>
+
+      <section class="stats" aria-label="ステータス">
+        <div class="stat">
+          <span>おなか</span>
+          <meter id="hunger" min="0" max="100"></meter>
+        </div>
+        <div class="stat">
+          <span>ごきげん</span>
+          <meter id="happy" min="0" max="100"></meter>
+        </div>
+        <div class="stat">
+          <span>げんき</span>
+          <meter id="energy" min="0" max="100"></meter>
+        </div>
+        <div class="stat">
+          <span>きれい</span>
+          <meter id="clean" min="0" max="100"></meter>
+        </div>
+      </section>
+
+      <section class="controls" aria-label="おせわ">
+        <button class="action food-action" data-action="foodMenu" type="button">
+          <span>🍽</span>
+          たべる
+        </button>
+        <button class="action use-action" data-action="useMenu" type="button">
+          <span>🎒</span>
+          つかう
+        </button>
+        <button class="action" data-action="miniMenu" type="button">
+          <span>🎮</span>
+          ミニゲーム
+        </button>
+        <button class="action play-action" data-action="play" type="button">
+          <span>🎈</span>
+          あそぶ
+        </button>
+        <button class="action earn-action" data-action="earn" type="button">
+          <span>◆</span>
+          コイン稼ぎ
+        </button>
+        <button class="action" data-action="groom" type="button">
+          <span>✦</span>
+          お手入れ/お風呂
+        </button>
+        <button class="action" data-action="cleanPoop" type="button">
+          <span>🧹</span>
+          うんち掃除
+        </button>
+        <button class="action" data-action="sleep" type="button">
+          <span>☾</span>
+          ねる
+        </button>
+        <button class="action" data-action="medicine" type="button">
+          <span>✚</span>
+          くすり
+        </button>
+        <button class="action battle-action" data-action="battle" type="button">
+          <span>⚔</span>
+          バトル
+        </button>
+      </section>
+
+      <section id="activity" class="activity hidden" aria-live="polite">
+        <div class="activity-head">
+          <h2 id="activityTitle">イベント</h2>
+          <button id="closeActivity" class="icon-btn" type="button" aria-label="閉じる">×</button>
+        </div>
+        <div id="activityBody" class="activity-body"></div>
+      </section>
+
+      <section id="panels" class="panels">
+        <article class="panel">
+          <div class="panel-head">
+            <h2>ショップ</h2>
+            <p>押すと買える</p>
+          </div>
+          <div class="shop">
+            <button class="shop-item" data-item="feast" type="button">
+              <span>🍱</span>
+              買う ごちそう 24
+            </button>
+            <button class="shop-item" data-item="cake" type="button">
+              <span>🍰</span>
+              買う ケーキ 18
+            </button>
+            <button class="shop-item" data-item="purpleDrink" type="button">
+              <span class="swatch purple"></span>
+              買う 紫になーる 42
+            </button>
+            <button class="shop-item" data-item="blueDrink" type="button">
+              <span class="swatch blue"></span>
+              買う 水色になーる 42
+            </button>
+            <button class="shop-item" data-item="yellowDrink" type="button">
+              <span class="swatch yellow"></span>
+              買う 黄色になーる 42
+            </button>
+            <button class="shop-item" data-item="deepBlueDrink" type="button">
+              <span class="swatch deep-blue"></span>
+              買う 青になーる 42
+            </button>
+            <button class="shop-item" data-item="greenDrink" type="button">
+              <span class="swatch green"></span>
+              買う 緑になーる 42
+            </button>
+            <button class="shop-item" data-item="redDrink" type="button">
+              <span class="swatch red"></span>
+              買う 赤になーる 42
+            </button>
+            <button class="shop-item" data-item="careCharm" type="button">
+              <span>✦</span>
+              買う ミスけし 1000
+            </button>
+            <button class="shop-item" data-item="flower" type="button">
+              <span>✿</span>
+              買う 花 28
+            </button>
+            <button class="shop-item" data-item="star" type="button">
+              <span>★</span>
+              買う 星 45
+            </button>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head">
+            <h2>もちもの</h2>
+            <p>上の「つかう」から選ぶ</p>
+          </div>
+          <div class="inventory compact-inventory">
+            <button class="inventory-item" data-use="feast" type="button">使う ごちそう <strong id="feastCount">0</strong></button>
+            <button class="inventory-item" data-use="cake" type="button">使う ケーキ <strong id="cakeCount">0</strong></button>
+            <button class="inventory-item" data-use="purpleDrink" type="button">使う 紫になーる <strong id="purpleCount">0</strong></button>
+            <button class="inventory-item" data-use="blueDrink" type="button">使う 水色になーる <strong id="blueCount">0</strong></button>
+            <button class="inventory-item" data-use="yellowDrink" type="button">使う 黄色になーる <strong id="yellowCount">0</strong></button>
+            <button class="inventory-item" data-use="deepBlueDrink" type="button">使う 青になーる <strong id="deepBlueCount">0</strong></button>
+            <button class="inventory-item" data-use="greenDrink" type="button">使う 緑になーる <strong id="greenCount">0</strong></button>
+            <button class="inventory-item" data-use="redDrink" type="button">使う 赤になーる <strong id="redCount">0</strong></button>
+            <button class="inventory-item" data-use="careCharm" type="button">使う ミスけし <strong id="careCharmCount">0</strong></button>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head">
+            <h2>ミニゲーム</h2>
+            <p>9つから選べる</p>
+          </div>
+          <button class="battle-now" data-open="mini" type="button">ミニゲームを選ぶ</button>
+        </article>
+
+        <article class="panel battle-log-panel">
+          <div class="panel-head">
+            <h2>バトル</h2>
+            <p>可愛さ・レア度・ミスで勝負</p>
+          </div>
+          <button id="battleNow" class="battle-now" type="button">バトル画面へ</button>
+          <div id="battleLog" class="battle-log">まだ戦っていない</div>
+        </article>
+      </section>
+    </main>
+
+    <script src="./app.js?v=9"></script>
+  </body>
+</html>
