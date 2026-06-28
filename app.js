@@ -47,35 +47,49 @@ const petKeys = [
   "wins",
   "losses",
   "careMistakes",
+  "cuteBonus",
+  "rarityBonus",
+  "married",
+  "partnerName",
   "battleLog",
 ];
 
 const shopItems = {
-  feast: { price: 24, kind: "stock" },
-  cake: { price: 18, kind: "stock" },
-  purpleDrink: { price: 88, kind: "stock" },
-  blueDrink: { price: 88, kind: "stock" },
-  yellowDrink: { price: 88, kind: "stock" },
-  deepBlueDrink: { price: 88, kind: "stock" },
-  greenDrink: { price: 88, kind: "stock" },
-  redDrink: { price: 88, kind: "stock" },
-  careCharm: { price: 1000, kind: "stock" },
-  flower: { price: 28, kind: "decor" },
-  star: { price: 45, kind: "decor" },
+  feast: { price: 120, kind: "stock" },
+  cake: { price: 90, kind: "stock" },
+  pancake: { price: 3000, kind: "stock" },
+  purpleDrink: { price: 220, kind: "stock" },
+  blueDrink: { price: 220, kind: "stock" },
+  yellowDrink: { price: 220, kind: "stock" },
+  deepBlueDrink: { price: 220, kind: "stock" },
+  greenDrink: { price: 220, kind: "stock" },
+  redDrink: { price: 220, kind: "stock" },
+  rainbowDrink: { price: 5000, kind: "stock" },
+  accessory: { price: 1000, kind: "stock" },
+  careCharm: { price: 1800, kind: "stock" },
+  flower: { price: 180, kind: "decor" },
+  star: { price: 260, kind: "decor" },
+  ribbon: { price: 420, kind: "decor" },
+  heart: { price: 520, kind: "decor" },
 };
 
 const itemLabels = {
   feast: { label: "ごちそう", icon: "🍱" },
   cake: { label: "ケーキ", icon: "🍰" },
+  pancake: { label: "可愛さアップパンケーキ", icon: "🥞" },
   purpleDrink: { label: "紫になーる", swatch: "purple" },
   blueDrink: { label: "水色になーる", swatch: "blue" },
   yellowDrink: { label: "黄色になーる", swatch: "yellow" },
   deepBlueDrink: { label: "青になーる", swatch: "deep-blue" },
   greenDrink: { label: "緑になーる", swatch: "green" },
   redDrink: { label: "赤になーる", swatch: "red" },
+  rainbowDrink: { label: "虹色になーる", swatch: "rainbow" },
+  accessory: { label: "アクセサリー", icon: "◇" },
   careCharm: { label: "ミスけし", icon: "✦" },
   flower: { label: "花", icon: "✿" },
   star: { label: "星", icon: "★" },
+  ribbon: { label: "リボン", icon: "🎀" },
+  heart: { label: "ハート", icon: "♥" },
 };
 
 const defaultState = {
@@ -98,19 +112,31 @@ const defaultState = {
   wins: 0,
   losses: 0,
   careMistakes: 0,
+  cuteBonus: 0,
+  rarityBonus: 0,
+  married: false,
+  partnerName: "",
   pets: {},
   inventory: {
     feast: 0,
     cake: 0,
+    pancake: 0,
     purpleDrink: 0,
     blueDrink: 0,
     yellowDrink: 0,
     deepBlueDrink: 0,
     greenDrink: 0,
     redDrink: 0,
+    rainbowDrink: 0,
+    accessory: 0,
     careCharm: 0,
   },
   decor: [],
+  fieldDecor: {
+    land: [],
+    sky: [],
+    sea: [],
+  },
   battleLog: "まだ戦っていない",
   lastTick: Date.now(),
 };
@@ -184,11 +210,29 @@ function normalizeState(saved) {
     field: ["land", "sky", "sea"].includes(saved.field) ? saved.field : "land",
     inventory: { ...defaultState.inventory, ...(saved.inventory || {}) },
     decor: Array.isArray(saved.decor) ? saved.decor : [],
+    fieldDecor: normalizeFieldDecor(saved),
     pets: normalizePets(saved),
     lastTick: Date.now(),
   };
   loadActivePet(normalized, normalized.field);
   return normalized;
+}
+
+function normalizeFieldDecor(saved) {
+  const fieldDecor = {
+    land: [],
+    sky: [],
+    sea: [],
+    ...(saved.fieldDecor || {}),
+  };
+  ["land", "sky", "sea"].forEach((field) => {
+    fieldDecor[field] = Array.isArray(fieldDecor[field]) ? fieldDecor[field] : [];
+  });
+  if (!saved.fieldDecor && Array.isArray(saved.decor) && saved.decor.length) {
+    const field = ["land", "sky", "sea"].includes(saved.field) ? saved.field : "land";
+    fieldDecor[field] = [...saved.decor];
+  }
+  return fieldDecor;
 }
 
 function defaultPet(field) {
@@ -204,6 +248,10 @@ function normalizePets(saved) {
     pets[field] = { ...defaultPet(field), ...((saved.pets && saved.pets[field]) || {}) };
     pets[field].stage = Math.max(0, Math.min(stages.length - 1, Number(pets[field].stage) || 0));
     pets[field].legendLevel = Math.max(0, Number(pets[field].legendLevel) || 0);
+    pets[field].cuteBonus = Math.max(0, Number(pets[field].cuteBonus) || 0);
+    pets[field].rarityBonus = Math.max(0, Number(pets[field].rarityBonus) || 0);
+    pets[field].married = Boolean(pets[field].married);
+    pets[field].partnerName = pets[field].partnerName || "";
   });
   if (!saved.pets && saved.hatched) {
     pets[saved.field || "land"] = { ...pets[saved.field || "land"], ...pickPetState(saved) };
@@ -245,7 +293,7 @@ function currentStage() {
     speciesName: endless ? `${names[state.stage]}+${state.legendLevel}` : names[state.stage],
     name: state.customName || (endless ? `${names[state.stage]}+${state.legendLevel}` : names[state.stage]),
     reward: endless ? 100 + state.legendLevel * 35 : base.reward,
-    rarity: endless ? base.rarity + state.legendLevel : base.rarity,
+    rarity: (endless ? base.rarity + state.legendLevel : base.rarity) + (state.rarityBonus || 0),
   };
 }
 
@@ -273,7 +321,7 @@ function progressPercent() {
 }
 
 function cutenessScore() {
-  return Math.max(0, Math.round(state.happy * 0.55 + state.clean * 0.3 + state.hunger * 0.15 - state.careMistakes * 4));
+  return Math.max(0, Math.round(state.happy * 0.55 + state.clean * 0.3 + state.hunger * 0.15 + (state.cuteBonus || 0) - state.careMistakes * 4));
 }
 
 function careBonus() {
@@ -324,15 +372,15 @@ function render() {
   el.evolveCount.textContent = state.evolveCount;
   el.wins.textContent = state.wins;
   el.mistakes.textContent = state.careMistakes;
-  el.feastCount.textContent = state.inventory.feast;
-  el.cakeCount.textContent = state.inventory.cake;
-  el.purpleCount.textContent = state.inventory.purpleDrink;
-  el.blueCount.textContent = state.inventory.blueDrink;
-  el.yellowCount.textContent = state.inventory.yellowDrink;
-  el.deepBlueCount.textContent = state.inventory.deepBlueDrink;
-  el.greenCount.textContent = state.inventory.greenDrink;
-  el.redCount.textContent = state.inventory.redDrink;
-  el.careCharmCount.textContent = state.inventory.careCharm;
+  if (el.feastCount) el.feastCount.textContent = state.inventory.feast;
+  if (el.cakeCount) el.cakeCount.textContent = state.inventory.cake;
+  if (el.purpleCount) el.purpleCount.textContent = state.inventory.purpleDrink;
+  if (el.blueCount) el.blueCount.textContent = state.inventory.blueDrink;
+  if (el.yellowCount) el.yellowCount.textContent = state.inventory.yellowDrink;
+  if (el.deepBlueCount) el.deepBlueCount.textContent = state.inventory.deepBlueDrink;
+  if (el.greenCount) el.greenCount.textContent = state.inventory.greenDrink;
+  if (el.redCount) el.redCount.textContent = state.inventory.redDrink;
+  if (el.careCharmCount) el.careCharmCount.textContent = state.inventory.careCharm;
   el.battleLog.textContent = state.battleLog;
   renderDecorations();
   el.shells.forEach((shell, index) => shell.classList.toggle("glow", index === glowingShell));
@@ -342,6 +390,7 @@ function render() {
 
 function renderDecorations() {
   if (!el.decorLayer) return;
+  const currentDecor = currentFieldDecor();
   const positions = [
     { left: "14%", bottom: "28%" },
     { left: "24%", bottom: "18%" },
@@ -352,14 +401,21 @@ function renderDecorations() {
     { left: "18%", bottom: "46%" },
     { left: "76%", bottom: "52%" },
   ];
-  el.decorLayer.innerHTML = state.decor
+  el.decorLayer.innerHTML = currentDecor
     .map((item, index) => {
       const pos = positions[index % positions.length];
-      const type = item === "star" ? "star" : "flower";
-      const symbol = type === "star" ? "★" : "✿";
+      const type = ["star", "ribbon", "heart"].includes(item) ? item : "flower";
+      const symbols = { star: "★", flower: "✿", ribbon: "🎀", heart: "♥" };
+      const symbol = symbols[type];
       return `<span class="decor-piece ${type}" style="left:${pos.left};bottom:${pos.bottom}">${symbol}</span>`;
     })
     .join("");
+}
+
+function currentFieldDecor() {
+  if (!state.fieldDecor) state.fieldDecor = normalizeFieldDecor(state);
+  if (!Array.isArray(state.fieldDecor[state.field])) state.fieldDecor[state.field] = [];
+  return state.fieldDecor[state.field];
 }
 
 function say(message) {
@@ -547,8 +603,9 @@ function openFoodMenu() {
         <button data-food="free" type="button"><strong>無限ごはん</strong><span>いつでも食べられる</span></button>
         <button data-food="feast" type="button"><strong>ごちそう</strong><span>もちものを1つ使う</span></button>
         <button data-food="cake" type="button"><strong>おやつ</strong><span>ケーキを1つ使う</span></button>
+        <button data-food="pancake" type="button"><strong>可愛さアップパンケーキ</strong><span>可愛さ+10</span></button>
       </div>
-      <div class="result-box">買った食べ物は「つかう」でも使えるよ</div>
+      <div class="result-box">買った食べ物は「もちもの」でも使えるよ</div>
     `,
   );
 }
@@ -558,19 +615,22 @@ function openUseMenu() {
   const items = [
     ["feast", "ごちそう"],
     ["cake", "ケーキ"],
+    ["pancake", "可愛さアップパンケーキ"],
     ["purpleDrink", "紫になーる"],
     ["blueDrink", "水色になーる"],
     ["yellowDrink", "黄色になーる"],
     ["deepBlueDrink", "青になーる"],
     ["greenDrink", "緑になーる"],
     ["redDrink", "赤になーる"],
+    ["rainbowDrink", "虹色になーる"],
+    ["accessory", "アクセサリー"],
     ["careCharm", "ミスけし"],
   ];
   const itemButtons = items
     .map(([key, label]) => `<button data-use="${key}" type="button"><strong>${label}</strong><span>持ち数 ${state.inventory[key]}</span></button>`)
     .join("");
   openActivity(
-    "つかう",
+    "もちもの",
     `
       <div class="choice-grid use-grid">${itemButtons}</div>
       <div class="result-box">ショップで買ったアイテムをここから使えるよ</div>
@@ -580,13 +640,30 @@ function openUseMenu() {
 
 function openShopMenu() {
   ensureHatched();
-  const order = ["feast", "cake", "purpleDrink", "blueDrink", "yellowDrink", "deepBlueDrink", "greenDrink", "redDrink", "careCharm", "flower", "star"];
+  const order = [
+    "feast",
+    "cake",
+    "pancake",
+    "purpleDrink",
+    "blueDrink",
+    "yellowDrink",
+    "deepBlueDrink",
+    "greenDrink",
+    "redDrink",
+    "rainbowDrink",
+    "accessory",
+    "careCharm",
+    "flower",
+    "star",
+    "ribbon",
+    "heart",
+  ];
   const buttons = order
     .map((key) => {
       const item = shopItems[key];
       const meta = itemLabels[key];
       const mark = meta.swatch ? `<span class="swatch ${meta.swatch}"></span>` : `<span>${meta.icon}</span>`;
-      const owned = item.kind === "decor" ? state.decor.filter((decor) => decor === key).length : state.inventory[key];
+      const owned = item.kind === "decor" ? currentFieldDecor().filter((decor) => decor === key).length : state.inventory[key];
       return `
         <button class="shop-item" data-buy="${key}" type="button">
           ${mark}
@@ -600,7 +677,7 @@ function openShopMenu() {
     "ショップ",
     `
       <div class="shop activity-shop">${buttons}</div>
-      <div class="result-box">買った花と星は、買った数だけフィールドにかざれるよ</div>
+      <div class="result-box">花・星・リボン・ハートは、今いるフィールドだけにかざれるよ</div>
     `,
   );
 }
@@ -680,6 +757,7 @@ function care(action) {
       say("体調がよくなった！");
     },
     battle: () => openBattleView(),
+    marry: () => openMarriageView(),
   };
 
   moves[action]();
@@ -703,6 +781,13 @@ function useItem(item) {
     state.clean = clamp(state.clean - 6);
     addGrowth(1.1);
     say("ケーキでごきげん！進化に近づいた");
+  }
+  if (item === "pancake") {
+    state.cuteBonus = (state.cuteBonus || 0) + 10;
+    state.hunger = clamp(state.hunger + 18);
+    state.happy = clamp(state.happy + 16);
+    addGrowth(1.2);
+    say("可愛さアップパンケーキ！可愛さ度が10上がった");
   }
   if (item === "purpleDrink") {
     state.color = "purple";
@@ -733,6 +818,20 @@ function useItem(item) {
     state.color = "red";
     state.happy = clamp(state.happy + 12);
     say("赤になーるを飲んだ！からだが赤に変わった");
+  }
+  if (item === "rainbowDrink") {
+    state.color = "rainbow";
+    state.cuteBonus = (state.cuteBonus || 0) + 30;
+    state.rarityBonus = (state.rarityBonus || 0) + 5;
+    state.happy = clamp(state.happy + 30);
+    addGrowth(2.2);
+    say("虹色になーる！可愛さ+30、レア度+5！");
+  }
+  if (item === "accessory") {
+    state.cuteBonus = (state.cuteBonus || 0) + 8;
+    state.rarityBonus = (state.rarityBonus || 0) + 1;
+    state.happy = clamp(state.happy + 18);
+    say("アクセサリーをつけた！可愛さとレア度がアップ");
   }
   if (item === "careCharm") {
     state.careMistakes = Math.max(0, state.careMistakes - 5);
@@ -776,7 +875,7 @@ function buy(item) {
   }
   state.coins -= shopItem.price;
   if (shopItem.kind === "decor") {
-    state.decor.push(item);
+    currentFieldDecor().push(item);
     state.happy = clamp(state.happy + 10);
     say(`${itemLabels[item].label}をかざった！買った分だけ増えるよ`);
   } else {
@@ -812,13 +911,20 @@ function openBattleView(resultHtml = "", difficulty = "normal") {
   ensureHatched();
   activeOpponent = makeOpponent(difficulty);
   const playerCute = cutenessScore();
+  const playerRarity = currentStage().rarity;
+  const playerTotal = totalBattleScore();
+  const difficulties = [
+    ["weak", "弱い"],
+    ["normal", "普通"],
+    ["strong", "強い"],
+  ]
+    .map(([level, label]) => `<button class="${difficulty === level ? "selected" : ""}" data-battle-level="${level}" type="button">${label}</button>`)
+    .join("");
   openActivity(
     "バトル",
     `
       <div class="difficulty-row">
-        <button data-battle-level="weak" type="button">弱い</button>
-        <button data-battle-level="normal" type="button">普通</button>
-        <button data-battle-level="strong" type="button">強い</button>
+        ${difficulties}
       </div>
       <div class="versus">
         <div class="fighter">
@@ -826,11 +932,11 @@ function openBattleView(resultHtml = "", difficulty = "normal") {
           <h3>${currentStage().name}</h3>
           <dl>
             <div><dt>可愛さ度</dt><dd>${playerCute}</dd></div>
-            <div><dt>レア度</dt><dd>${currentStage().rarity}</dd></div>
+            <div><dt>レア度</dt><dd>${playerRarity}</dd></div>
             <div><dt>ミス回数</dt><dd>${state.careMistakes}</dd></div>
             <div><dt>調子</dt><dd>${state.sick ? "病気" : "元気"}</dd></div>
           </dl>
-          <strong>可愛さ勝負 ${playerCute}</strong>
+          <strong>総合 ${playerTotal}</strong>
         </div>
         <div class="versus-mark">VS</div>
         <div class="fighter">
@@ -842,7 +948,7 @@ function openBattleView(resultHtml = "", difficulty = "normal") {
             <div><dt>ミス回数</dt><dd>${activeOpponent.mistakes}</dd></div>
             <div><dt>勝利報酬</dt><dd>${activeOpponent.reward + state.stage * 6}</dd></div>
           </dl>
-          <strong>可愛さ勝負 ${activeOpponent.score}</strong>
+          <strong>総合 ${activeOpponent.score}</strong>
         </div>
       </div>
       <div class="activity-actions">
@@ -856,7 +962,7 @@ function openBattleView(resultHtml = "", difficulty = "normal") {
 
 function resolveBattle() {
   const opponent = activeOpponent || makeOpponent();
-  const player = cutenessScore() + currentStage().rarity * 4 + Math.floor(Math.random() * 16);
+  const player = totalBattleScore() + Math.floor(Math.random() * 16);
   const enemy = opponent.score + Math.floor(Math.random() * 16);
   state.energy = clamp(state.energy - 12);
   if (player >= enemy) {
@@ -867,13 +973,82 @@ function resolveBattle() {
     addGrowth(growth);
     state.happy = clamp(state.happy + 14);
     state.battleLog = `${opponent.name}に勝利！+${reward}コイン / 進化+${growth.toFixed(1)}`;
-    openBattleView(`勝利！ 可愛さ ${player} 対 ${enemy}。${reward}コインもらった`, opponent.difficulty);
+    openBattleView(`勝利！ 総合 ${player} 対 ${enemy}。レア度も入れて勝負したよ。${reward}コインもらった`, opponent.difficulty);
   } else {
     state.losses += 1;
     addGrowth(1.2);
     state.battleLog = `${opponent.name}に惜敗。でも進化経験は入った`;
-    openBattleView(`惜敗... 可愛さ ${player} 対 ${enemy}。可愛さ度は下がらないよ`, opponent.difficulty);
+    openBattleView(`惜敗... 総合 ${player} 対 ${enemy}。可愛さ度は下がらないよ`, opponent.difficulty);
   }
+  render();
+}
+
+function openMarriageView(resultHtml = "") {
+  ensureHatched();
+  if (state.stage < 4) {
+    openActivity(
+      "結婚",
+      `
+        <div class="result-box">大人になったら結婚できるよ。まずはダイヤ以上まで育てよう</div>
+        <div class="activity-actions single">
+          <button data-activity="close" type="button">戻る</button>
+        </div>
+      `,
+    );
+    return;
+  }
+  if (state.married) {
+    openActivity(
+      "結婚",
+      `
+        <div class="mini-outcome success">
+          <strong>${state.partnerName}と結婚中</strong>
+          <span>可愛さとレア度が上がった特別なパートナーだよ</span>
+        </div>
+        <div class="activity-actions single">
+          <button data-activity="close" type="button">戻る</button>
+        </div>
+      `,
+    );
+    return;
+  }
+  const partners = [
+    { name: "ハートっち", rarity: 2, cute: 12 },
+    { name: "リボンっち", rarity: 3, cute: 14 },
+    { name: "にじラブっち", rarity: 5, cute: 18 },
+  ];
+  const buttons = partners
+    .map(
+      (partner, index) => `
+        <button data-marry="${index}" type="button">
+          <strong>${partner.name}</strong>
+          <span>可愛さ+${partner.cute} / レア度+${partner.rarity}</span>
+        </button>
+      `,
+    )
+    .join("");
+  activeMiniGame = { type: "marry", partners };
+  openActivity(
+    "結婚",
+    `
+      <div class="choice-grid">${buttons}</div>
+      <div class="result-box">${resultHtml || "大人になったから、好きな相手を選んで結婚できるよ"}</div>
+    `,
+  );
+}
+
+function marryPartner(index) {
+  if (!activeMiniGame || activeMiniGame.type !== "marry") return;
+  const partner = activeMiniGame.partners[Number(index)];
+  if (!partner || state.married) return;
+  state.married = true;
+  state.partnerName = partner.name;
+  state.cuteBonus = (state.cuteBonus || 0) + partner.cute;
+  state.rarityBonus = (state.rarityBonus || 0) + partner.rarity;
+  state.happy = clamp(state.happy + 30);
+  addGrowth(2.8);
+  say(`${partner.name}と結婚！可愛さとレア度アップ`);
+  openMarriageView(`${partner.name}と結婚した！`);
   render();
 }
 
@@ -953,8 +1128,8 @@ function openMiniGame(game) {
 }
 
 function openBubbleGame() {
-  activeMiniGame = { type: "bubble", popped: 0, goal: 5 };
-  const bubbles = Array.from({ length: 7 }, (_, index) => {
+  activeMiniGame = { type: "bubble", popped: 0, goal: 20 };
+  const bubbles = Array.from({ length: 24 }, (_, index) => {
     const left = 10 + ((index * 13) % 78);
     const delay = (index % 4) * 0.35;
     return `<button class="bubble-target" data-bubble="${index}" style="left:${left}%;animation-delay:${delay}s" type="button">○</button>`;
@@ -962,17 +1137,17 @@ function openBubbleGame() {
   openActivity(
     "泡タッチ",
     `
-      <div class="mini-status"><span>残り <strong id="miniTimer">10</strong>秒</span><span>泡 <strong id="miniCount">0</strong>/5</span></div>
+      <div class="mini-status"><span>残り <strong id="miniTimer">10</strong>秒</span><span>泡 <strong id="miniCount">0</strong>/20</span></div>
       <div class="bubble-game">${bubbles}</div>
-      <div class="result-box">下から上がる泡を5個タッチ！タッチすると泡がはじけるよ</div>
+      <div class="result-box">下から上がる泡を20個タッチ！タッチすると泡がはじけるよ</div>
     `,
   );
   startMiniCountdown(10, () => finishBubbleGame(false));
 }
 
 function openStarGame() {
-  activeMiniGame = { type: "star", collected: 0, goal: 10 };
-  const stars = Array.from({ length: 10 }, (_, index) => {
+  activeMiniGame = { type: "star", collected: 0, goal: 20 };
+  const stars = Array.from({ length: 20 }, (_, index) => {
     const left = 8 + ((index * 17) % 82);
     const top = 10 + ((index * 23) % 72);
     return `<button class="collect-star" data-star="${index}" style="left:${left}%;top:${top}%" type="button">★</button>`;
@@ -980,9 +1155,9 @@ function openStarGame() {
   openActivity(
     "星あつめ",
     `
-      <div class="mini-status"><span>残り <strong id="miniTimer">10</strong>秒</span><span>星 <strong id="miniCount">0</strong>/10</span></div>
+      <div class="mini-status"><span>残り <strong id="miniTimer">10</strong>秒</span><span>星 <strong id="miniCount">0</strong>/20</span></div>
       <div class="star-game">${stars}</div>
-      <div class="result-box">10秒以内に星を10個集めたら成功！</div>
+      <div class="result-box">10秒以内に星を20個集めたら成功！</div>
     `,
   );
   startMiniCountdown(10, () => finishStarGame(false));
@@ -1129,11 +1304,11 @@ function finishBubbleGame(success) {
     state.clean = clamp(state.clean + 22);
     addGrowth(0.75);
     say("泡タッチ成功！泡がはじけてきれいアップ");
-    miniResult("泡タッチ", "泡を5個はじけさせた！きれいアップ", true);
+    miniResult("泡タッチ", "泡を20個はじけさせた！きれいアップ", true);
   } else {
     state.clean = clamp(state.clean + 4);
     say("時間切れ。泡が流れていった");
-    miniResult("泡タッチ", "時間切れ。次は泡を5個タッチしよう", false);
+    miniResult("泡タッチ", "時間切れ。次は泡を20個タッチしよう", false);
   }
   render();
 }
@@ -1156,12 +1331,12 @@ function finishStarGame(success) {
     state.happy = clamp(state.happy + 10);
     addGrowth(1.5);
     say("星あつめ成功！進化が進んだ");
-    miniResult("星あつめ", "10秒以内に星を10個集めた！進化が進む", true);
+    miniResult("星あつめ", "10秒以内に星を20個集めた！進化が進む", true);
   } else {
     addCoins(2);
     state.energy = clamp(state.energy - 4);
     say("星が集めきれなかった");
-    miniResult("星あつめ", "10個集める前に時間切れ。少しだけコインゲット", false);
+    miniResult("星あつめ", "20個集める前に時間切れ。少しだけコインゲット", false);
   }
   render();
 }
@@ -1429,6 +1604,10 @@ el.activityBody.addEventListener("click", (event) => {
     useItem("cake");
     openFoodMenu();
   }
+  if (button.dataset.food === "pancake") {
+    useItem("pancake");
+    openFoodMenu();
+  }
   if (button.dataset.use) {
     useItem(button.dataset.use);
     openUseMenu();
@@ -1441,6 +1620,7 @@ el.activityBody.addEventListener("click", (event) => {
   if (button.dataset.maze) stepMaze(button.dataset.maze, button);
   if (button.dataset.balance) nudgeBalance(button.dataset.balance);
   if (button.dataset.colorCard) pickColorCard(button);
+  if (button.dataset.marry) marryPartner(button.dataset.marry);
 });
 
 el.battleNow.addEventListener("click", openBattleView);

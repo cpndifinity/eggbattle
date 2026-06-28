@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>たまバト</title>
-    <link rel="stylesheet" href="./style.css?v=10" />
+    <link rel="stylesheet" href="./style.css?v=11" />
   </head>
   <body>
     <main class="app-shell">
@@ -97,7 +97,7 @@
         </button>
         <button class="action use-action" data-action="useMenu" type="button">
           <span>🎒</span>
-          つかう
+          もちもの
         </button>
         <button class="action shop-action" data-action="shopMenu" type="button">
           <span>🛒</span>
@@ -135,6 +135,10 @@
           <span>⚔</span>
           バトル
         </button>
+        <button class="action marry-action" data-action="marry" type="button">
+          <span>♡</span>
+          結婚
+        </button>
       </section>
 
       <section id="activity" class="activity hidden" aria-live="polite">
@@ -146,24 +150,6 @@
       </section>
 
       <section id="panels" class="panels">
-        <article class="panel">
-          <div class="panel-head">
-            <h2>もちもの</h2>
-            <p>上の「つかう」から選ぶ</p>
-          </div>
-          <div class="inventory compact-inventory">
-            <button class="inventory-item" data-use="feast" type="button">使う ごちそう <strong id="feastCount">0</strong></button>
-            <button class="inventory-item" data-use="cake" type="button">使う ケーキ <strong id="cakeCount">0</strong></button>
-            <button class="inventory-item" data-use="purpleDrink" type="button">使う 紫になーる <strong id="purpleCount">0</strong></button>
-            <button class="inventory-item" data-use="blueDrink" type="button">使う 水色になーる <strong id="blueCount">0</strong></button>
-            <button class="inventory-item" data-use="yellowDrink" type="button">使う 黄色になーる <strong id="yellowCount">0</strong></button>
-            <button class="inventory-item" data-use="deepBlueDrink" type="button">使う 青になーる <strong id="deepBlueCount">0</strong></button>
-            <button class="inventory-item" data-use="greenDrink" type="button">使う 緑になーる <strong id="greenCount">0</strong></button>
-            <button class="inventory-item" data-use="redDrink" type="button">使う 赤になーる <strong id="redCount">0</strong></button>
-            <button class="inventory-item" data-use="careCharm" type="button">使う ミスけし <strong id="careCharmCount">0</strong></button>
-          </div>
-        </article>
-
         <article class="panel battle-log-panel">
           <div class="panel-head">
             <h2>バトル</h2>
@@ -175,6 +161,6 @@
       </section>
     </main>
 
-    <script src="./app.js?v=10"></script>
+    <script src="./app.js?v=11"></script>
   </body>
 </html>

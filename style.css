@@ -439,6 +439,10 @@ h1 {
   --pet-bg: linear-gradient(160deg, #ff8b70, #d94141);
 }
 
+.pet-button.color-rainbow {
+  --pet-bg: conic-gradient(from 20deg, #ff6b6b, #ffd166, #7edc86, #7bdff2, #b388eb, #ff8fb1, #ff6b6b);
+}
+
 .pet-button.sick {
   filter: grayscale(0.45) saturate(0.72);
 }
@@ -681,6 +685,7 @@ meter::-webkit-meter-optimum-value {
 .food-action,
 .use-action,
 .shop-action,
+.marry-action,
 .battle-now {
   color: #6b3f00;
   background: #ffeeb4;
@@ -758,7 +763,7 @@ meter::-webkit-meter-optimum-value {
   box-shadow: 0 10px 22px rgba(33, 55, 74, 0.08);
 }
 
-.difficulty-row button:nth-child(3) {
+.difficulty-row button.selected {
   color: #6b3f00;
   background: #ffeeb4;
 }
@@ -905,6 +910,10 @@ meter::-webkit-meter-optimum-value {
 
 .fighter-pet.color-red {
   background: linear-gradient(160deg, #ff8b70, #d94141);
+}
+
+.fighter-pet.color-rainbow {
+  background: conic-gradient(from 20deg, #ff6b6b, #ffd166, #7edc86, #7bdff2, #b388eb, #ff8fb1, #ff6b6b);
 }
 
 .choice-grid {
@@ -1166,14 +1175,14 @@ meter::-webkit-meter-optimum-value {
 .bubble-target {
   position: absolute;
   bottom: -58px;
-  width: 54px;
-  height: 54px;
+  width: 44px;
+  height: 44px;
   border: 3px solid rgba(82, 199, 233, 0.55);
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.5);
   color: #2b8fb8;
   cursor: pointer;
-  font-size: 1.4rem;
+  font-size: 1.15rem;
   font-weight: 1000;
   animation: bubble-rise 3.2s linear infinite;
 }
@@ -1388,7 +1397,7 @@ meter::-webkit-meter-optimum-value {
 
 .panels {
   display: grid;
-  grid-template-columns: 0.9fr 1fr;
+  grid-template-columns: 1fr;
   gap: 14px;
   margin-top: 14px;
 }
@@ -1510,6 +1519,10 @@ meter::-webkit-meter-optimum-value {
   background: #e74b4b;
 }
 
+.swatch.rainbow {
+  background: conic-gradient(#ff6b6b, #ffd166, #7edc86, #7bdff2, #b388eb, #ff8fb1, #ff6b6b);
+}
+
 .shell {
   color: #7e588c;
   font-size: 2rem;
@@ -1552,6 +1565,14 @@ meter::-webkit-meter-optimum-value {
 
 .decor-piece.star {
   color: #fff37a;
+}
+
+.decor-piece.ribbon {
+  color: #e85dcb;
+}
+
+.decor-piece.heart {
+  color: #ef6f79;
 }
 
 @keyframes float {
