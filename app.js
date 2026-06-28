@@ -53,15 +53,29 @@ const petKeys = [
 const shopItems = {
   feast: { price: 24, kind: "stock" },
   cake: { price: 18, kind: "stock" },
-  purpleDrink: { price: 42, kind: "stock" },
-  blueDrink: { price: 42, kind: "stock" },
-  yellowDrink: { price: 42, kind: "stock" },
-  deepBlueDrink: { price: 42, kind: "stock" },
-  greenDrink: { price: 42, kind: "stock" },
-  redDrink: { price: 42, kind: "stock" },
+  purpleDrink: { price: 88, kind: "stock" },
+  blueDrink: { price: 88, kind: "stock" },
+  yellowDrink: { price: 88, kind: "stock" },
+  deepBlueDrink: { price: 88, kind: "stock" },
+  greenDrink: { price: 88, kind: "stock" },
+  redDrink: { price: 88, kind: "stock" },
   careCharm: { price: 1000, kind: "stock" },
   flower: { price: 28, kind: "decor" },
   star: { price: 45, kind: "decor" },
+};
+
+const itemLabels = {
+  feast: { label: "ごちそう", icon: "🍱" },
+  cake: { label: "ケーキ", icon: "🍰" },
+  purpleDrink: { label: "紫になーる", swatch: "purple" },
+  blueDrink: { label: "水色になーる", swatch: "blue" },
+  yellowDrink: { label: "黄色になーる", swatch: "yellow" },
+  deepBlueDrink: { label: "青になーる", swatch: "deep-blue" },
+  greenDrink: { label: "緑になーる", swatch: "green" },
+  redDrink: { label: "赤になーる", swatch: "red" },
+  careCharm: { label: "ミスけし", icon: "✦" },
+  flower: { label: "花", icon: "✿" },
+  star: { label: "星", icon: "★" },
 };
 
 const defaultState = {
@@ -108,11 +122,13 @@ let activeMiniGame = null;
 let audioCtx = null;
 let bgmTimer = null;
 let bgmOn = false;
+let miniTimer = null;
 
 const el = {
   pet: document.getElementById("petButton"),
   speech: document.getElementById("speech"),
   poop: document.getElementById("poop"),
+  decorLayer: document.getElementById("decorLayer"),
   coins: document.getElementById("coins"),
   bgmBtn: document.getElementById("bgmBtn"),
   hunger: document.getElementById("hunger"),
@@ -318,11 +334,32 @@ function render() {
   el.redCount.textContent = state.inventory.redDrink;
   el.careCharmCount.textContent = state.inventory.careCharm;
   el.battleLog.textContent = state.battleLog;
-  el.screen.classList.toggle("decor-flower", state.decor.includes("flower"));
-  el.screen.classList.toggle("decor-star", state.decor.includes("star"));
+  renderDecorations();
   el.shells.forEach((shell, index) => shell.classList.toggle("glow", index === glowingShell));
   el.fieldTabs.forEach((tab) => tab.classList.toggle("active", tab.dataset.field === state.field));
   saveState();
+}
+
+function renderDecorations() {
+  if (!el.decorLayer) return;
+  const positions = [
+    { left: "14%", bottom: "28%" },
+    { left: "24%", bottom: "18%" },
+    { left: "72%", bottom: "24%" },
+    { left: "82%", bottom: "36%" },
+    { left: "38%", bottom: "13%" },
+    { left: "60%", bottom: "16%" },
+    { left: "18%", bottom: "46%" },
+    { left: "76%", bottom: "52%" },
+  ];
+  el.decorLayer.innerHTML = state.decor
+    .map((item, index) => {
+      const pos = positions[index % positions.length];
+      const type = item === "star" ? "star" : "flower";
+      const symbol = type === "star" ? "★" : "✿";
+      return `<span class="decor-piece ${type}" style="left:${pos.left};bottom:${pos.bottom}">${symbol}</span>`;
+    })
+    .join("");
 }
 
 function say(message) {
@@ -380,6 +417,7 @@ function toggleBgm() {
 }
 
 function openActivity(title, html) {
+  clearMiniTimer();
   el.activityTitle.textContent = title;
   el.activityBody.innerHTML = html;
   el.activity.classList.remove("hidden");
@@ -387,11 +425,49 @@ function openActivity(title, html) {
 }
 
 function closeActivity() {
+  clearMiniTimer();
   el.activity.classList.add("hidden");
   el.panels.classList.remove("hidden");
   activeOpponent = null;
   activeMiniGame = null;
   render();
+}
+
+function clearMiniTimer() {
+  window.clearInterval(miniTimer);
+  miniTimer = null;
+}
+
+function startMiniCountdown(seconds, onExpire) {
+  const endAt = Date.now() + seconds * 1000;
+  const updateTimer = () => {
+    const left = Math.max(0, Math.ceil((endAt - Date.now()) / 1000));
+    const timerEl = document.getElementById("miniTimer");
+    if (timerEl) timerEl.textContent = left;
+    if (left <= 0) {
+      clearMiniTimer();
+      onExpire();
+    }
+  };
+  updateTimer();
+  miniTimer = window.setInterval(updateTimer, 250);
+}
+
+function miniResult(title, message, success) {
+  clearMiniTimer();
+  playTone(success ? 784 : 196, 0.13, success ? "triangle" : "sawtooth", 0.035);
+  openActivity(
+    title,
+    `
+      <div class="mini-outcome ${success ? "success" : "fail"}">
+        <strong>${success ? "成功！" : "失敗..."}</strong>
+        <span>${message}</span>
+      </div>
+      <div class="activity-actions single">
+        <button class="primary-activity" data-activity="miniMenu" type="button">ミニゲーム一覧へ</button>
+      </div>
+    `,
+  );
 }
 
 function ensureHatched() {
@@ -502,6 +578,33 @@ function openUseMenu() {
   );
 }
 
+function openShopMenu() {
+  ensureHatched();
+  const order = ["feast", "cake", "purpleDrink", "blueDrink", "yellowDrink", "deepBlueDrink", "greenDrink", "redDrink", "careCharm", "flower", "star"];
+  const buttons = order
+    .map((key) => {
+      const item = shopItems[key];
+      const meta = itemLabels[key];
+      const mark = meta.swatch ? `<span class="swatch ${meta.swatch}"></span>` : `<span>${meta.icon}</span>`;
+      const owned = item.kind === "decor" ? state.decor.filter((decor) => decor === key).length : state.inventory[key];
+      return `
+        <button class="shop-item" data-buy="${key}" type="button">
+          ${mark}
+          <strong>${meta.label}</strong>
+          <small>${item.price}コイン / 持ち数 ${owned}</small>
+        </button>
+      `;
+    })
+    .join("");
+  openActivity(
+    "ショップ",
+    `
+      <div class="shop activity-shop">${buttons}</div>
+      <div class="result-box">買った花と星は、買った数だけフィールドにかざれるよ</div>
+    `,
+  );
+}
+
 function care(action) {
   ensureHatched();
 
@@ -514,6 +617,7 @@ function care(action) {
   const moves = {
     foodMenu: () => openFoodMenu(),
     useMenu: () => openUseMenu(),
+    shopMenu: () => openShopMenu(),
     earn: () => {
       addCoins(6);
       state.happy = clamp(state.happy + 3);
@@ -666,10 +770,6 @@ function buy(item) {
   ensureHatched();
   const shopItem = shopItems[item];
   if (!shopItem) return;
-  if (shopItem.kind === "decor" && state.decor.includes(item)) {
-    say("もう置いてあるよ");
-    return;
-  }
   if (state.coins < shopItem.price) {
     say("コインが足りない！コイン稼ぎかミニゲームで増やそう");
     return;
@@ -678,12 +778,13 @@ function buy(item) {
   if (shopItem.kind === "decor") {
     state.decor.push(item);
     state.happy = clamp(state.happy + 10);
-    say("楽園がもっとすてきになった");
+    say(`${itemLabels[item].label}をかざった！買った分だけ増えるよ`);
   } else {
     state.inventory[item] += 1;
-    say("もちものに入れたよ。もちもの欄から使える");
+    say(`${itemLabels[item].label}をもちものに入れたよ`);
   }
   render();
+  if (!el.activity.classList.contains("hidden") && el.activityTitle.textContent === "ショップ") openShopMenu();
 }
 
 function makeOpponent(difficulty = "normal") {
@@ -820,8 +921,8 @@ function openMiniGame(game) {
       `
         <div class="fall-game">
           <button class="falling-snack" data-activity="catchSnack" type="button">🍰</button>
-          <span class="fall-decoy decoy-a">✕</span>
-          <span class="fall-decoy decoy-b">✕</span>
+          <button class="fall-decoy decoy-a" data-activity="missSnack" type="button">✕</button>
+          <button class="fall-decoy decoy-b" data-activity="missSnack" type="button">✕</button>
         </div>
         <div class="result-box">空から落ちてくるおやつをタッチしてキャッチ！</div>
       `,
@@ -843,26 +944,123 @@ function openMiniGame(game) {
       `,
     );
   }
-  const simpleGames = {
-    bubble: { title: "泡タッチ", icon: "○", action: "bubblePop", text: "泡をタッチするときれいアップ" },
-    star: { title: "星あつめ", icon: "★", action: "starCollect", text: "星を集めると進化が進む" },
-    rhythm: { title: "リズム", icon: "♪", action: "rhythmTap", text: "リズム成功でごきげん大アップ" },
-    treasure: { title: "宝箱", icon: "□", action: "treasureOpen", text: "宝箱でコイン多め" },
-    balance: { title: "バランス", icon: "△", action: "balanceTap", text: "バランス成功で元気アップ" },
-    color: { title: "色合わせ", icon: "●", action: "colorMatch", text: "色合わせで全体アップ" },
-  };
-  if (simpleGames[game]) {
-    const info = simpleGames[game];
-    openActivity(
-      info.title,
-      `
-        <div class="tap-game">
-          <button class="tap-target" data-activity="${info.action}" type="button">${info.icon}</button>
-        </div>
-        <div class="result-box">${info.text}</div>
-      `,
-    );
-  }
+  if (game === "bubble") openBubbleGame();
+  if (game === "star") openStarGame();
+  if (game === "rhythm") openRhythmGame();
+  if (game === "treasure") openTreasureGame();
+  if (game === "balance") openBalanceGame();
+  if (game === "color") openColorGame();
+}
+
+function openBubbleGame() {
+  activeMiniGame = { type: "bubble", popped: 0, goal: 5 };
+  const bubbles = Array.from({ length: 7 }, (_, index) => {
+    const left = 10 + ((index * 13) % 78);
+    const delay = (index % 4) * 0.35;
+    return `<button class="bubble-target" data-bubble="${index}" style="left:${left}%;animation-delay:${delay}s" type="button">○</button>`;
+  }).join("");
+  openActivity(
+    "泡タッチ",
+    `
+      <div class="mini-status"><span>残り <strong id="miniTimer">10</strong>秒</span><span>泡 <strong id="miniCount">0</strong>/5</span></div>
+      <div class="bubble-game">${bubbles}</div>
+      <div class="result-box">下から上がる泡を5個タッチ！タッチすると泡がはじけるよ</div>
+    `,
+  );
+  startMiniCountdown(10, () => finishBubbleGame(false));
+}
+
+function openStarGame() {
+  activeMiniGame = { type: "star", collected: 0, goal: 10 };
+  const stars = Array.from({ length: 10 }, (_, index) => {
+    const left = 8 + ((index * 17) % 82);
+    const top = 10 + ((index * 23) % 72);
+    return `<button class="collect-star" data-star="${index}" style="left:${left}%;top:${top}%" type="button">★</button>`;
+  }).join("");
+  openActivity(
+    "星あつめ",
+    `
+      <div class="mini-status"><span>残り <strong id="miniTimer">10</strong>秒</span><span>星 <strong id="miniCount">0</strong>/10</span></div>
+      <div class="star-game">${stars}</div>
+      <div class="result-box">10秒以内に星を10個集めたら成功！</div>
+    `,
+  );
+  startMiniCountdown(10, () => finishStarGame(false));
+}
+
+function openRhythmGame() {
+  activeMiniGame = { type: "rhythm", startedAt: Date.now(), beat: 980 };
+  openActivity(
+    "リズム",
+    `
+      <div class="rhythm-game">
+        <div class="timing-ring"><span></span></div>
+        <button class="rhythm-target" data-activity="rhythmTap" type="button">いまだ！</button>
+      </div>
+      <div class="result-box">黄色の輪が真ん中に重なるタイミングで押そう。ぴったりならごきげん大アップ！</div>
+    `,
+  );
+}
+
+function openTreasureGame() {
+  const path = [0, 1, 2, 7, 12, 13, 18, 23, 24];
+  activeMiniGame = { type: "treasure", path, step: 0 };
+  const cells = Array.from({ length: 25 }, (_, index) => {
+    const isStart = index === path[0];
+    const isGoal = index === path[path.length - 1];
+    const mark = isStart ? "▶" : isGoal ? "宝" : "";
+    return `<button class="maze-cell ${path.includes(index) ? "path" : "wall"} ${isStart ? "done" : ""}" data-maze="${index}" type="button">${mark}</button>`;
+  }).join("");
+  openActivity(
+    "宝箱迷路",
+    `
+      <div class="maze-game">${cells}</div>
+      <div class="result-box">光る道を順番に進んで宝箱まで行けたら成功！</div>
+    `,
+  );
+}
+
+function openBalanceGame() {
+  activeMiniGame = { type: "balance", tilt: 0, seconds: 7 };
+  openActivity(
+    "バランス",
+    `
+      <div class="mini-status"><span>残り <strong id="miniTimer">7</strong>秒</span><span>中心をキープ</span></div>
+      <div class="balance-game">
+        <div class="balance-board"><span id="balancePerson">人</span></div>
+        <div class="balance-meter"><span id="balanceNeedle"></span></div>
+      </div>
+      <div class="balance-controls">
+        <button data-balance="left" type="button">左</button>
+        <button data-balance="right" type="button">右</button>
+      </div>
+      <div class="result-box">ゆらゆらする台で、人が落ちないように左右ボタンで支えよう</div>
+    `,
+  );
+  startBalanceLoop();
+}
+
+function openColorGame() {
+  const colors = [
+    { name: "赤", value: "#e74b4b" },
+    { name: "青", value: "#3ca8db" },
+    { name: "緑", value: "#46bd72" },
+    { name: "黄", value: "#ffe45c" },
+  ];
+  const same = colors[Math.floor(Math.random() * colors.length)];
+  const different = colors.find((color) => color !== same && Math.random() < 0.4) || colors[(colors.indexOf(same) + 1) % colors.length];
+  const cards = [same, same, different].sort(() => Math.random() - 0.5);
+  activeMiniGame = { type: "color", cards, picked: [] };
+  const buttons = cards
+    .map((card, index) => `<button class="color-card" data-color-card="${index}" style="--card-color:${card.value}" type="button">?</button>`)
+    .join("");
+  openActivity(
+    "色合わせ",
+    `
+      <div class="color-game">${buttons}</div>
+      <div class="result-box">3枚のうち、同じ色のカードを2枚めくれたら成功！</div>
+    `,
+  );
 }
 
 function finishShellGame(pick) {
@@ -872,11 +1070,11 @@ function finishShellGame(pick) {
     state.happy = clamp(state.happy + 8);
     addGrowth(0.8);
     say("光る貝あたり！6コインゲット");
-    openMiniMenu();
+    miniResult("光る貝", "光っている貝を選べた！6コインゲット", true);
   } else {
     state.energy = clamp(state.energy - 3);
-    say("おしい！もう一回選んでみよう");
-    openMiniGame("shell");
+    say("おしい！違う貝だった");
+    miniResult("光る貝", "違う貝だった。次は光る貝をねらおう", false);
   }
   render();
 }
@@ -887,7 +1085,15 @@ function catchSnack() {
   state.energy = clamp(state.energy - 5);
   addGrowth(0.65);
   say("キャッチ成功！ごきげんアップ");
-  openMiniMenu();
+  miniResult("おやつキャッチ", "おやつをキャッチ！ごきげんとコインアップ", true);
+  render();
+}
+
+function missSnack() {
+  state.happy = clamp(state.happy - 8);
+  state.energy = clamp(state.energy - 4);
+  say("違うものを押しちゃった");
+  miniResult("おやつキャッチ", "おやつじゃないものを押したので失敗", false);
   render();
 }
 
@@ -903,6 +1109,7 @@ function skyJump() {
     addGrowth(1.8);
     playTone(784, 0.12, "square", 0.04);
     say("リズムぴったり！大ジャンプ成功！");
+    miniResult("そらジャンプ", "ぴったりジャンプ！進化がぐっと進んだ", true);
   } else {
     addCoins(2);
     state.happy = clamp(state.happy + 3);
@@ -910,55 +1117,191 @@ function skyJump() {
     addGrowth(0.5);
     playTone(220, 0.12, "sawtooth", 0.025);
     say("タイミングおしい！少しジャンプできた");
+    miniResult("そらジャンプ", "タイミングがずれた。少しだけ成長した", false);
   }
-  openMiniMenu();
   render();
 }
 
-function finishSimpleGame(kind) {
-  const rewards = {
-    bubble: () => {
-      addCoins(5);
-      state.clean = clamp(state.clean + 18);
-      addGrowth(0.55);
-      say("泡タッチ成功！きれいアップ");
-    },
-    star: () => {
-      addCoins(7);
-      state.happy = clamp(state.happy + 6);
-      addGrowth(1.1);
-      say("星あつめ成功！進化が進んだ");
-    },
-    rhythm: () => {
-      addCoins(5);
-      state.happy = clamp(state.happy + 22);
-      addGrowth(0.65);
-      say("リズム成功！ごきげん大アップ");
-    },
-    treasure: () => {
-      addCoins(14);
-      state.energy = clamp(state.energy - 4);
-      addGrowth(0.45);
-      say("宝箱オープン！コイン多め");
-    },
-    balance: () => {
-      addCoins(4);
-      state.energy = clamp(state.energy + 18);
-      addGrowth(0.45);
-      say("バランス成功！元気アップ");
-    },
-    color: () => {
-      addCoins(6);
-      state.hunger = clamp(state.hunger + 6);
-      state.happy = clamp(state.happy + 6);
-      state.energy = clamp(state.energy + 6);
-      state.clean = clamp(state.clean + 6);
-      addGrowth(0.65);
-      say("色合わせ成功！全体アップ");
-    },
-  };
-  rewards[kind]();
-  openMiniMenu();
+function finishBubbleGame(success) {
+  if (!activeMiniGame || activeMiniGame.type !== "bubble") return;
+  if (success) {
+    addCoins(7);
+    state.clean = clamp(state.clean + 22);
+    addGrowth(0.75);
+    say("泡タッチ成功！泡がはじけてきれいアップ");
+    miniResult("泡タッチ", "泡を5個はじけさせた！きれいアップ", true);
+  } else {
+    state.clean = clamp(state.clean + 4);
+    say("時間切れ。泡が流れていった");
+    miniResult("泡タッチ", "時間切れ。次は泡を5個タッチしよう", false);
+  }
+  render();
+}
+
+function popBubble(button) {
+  if (!activeMiniGame || activeMiniGame.type !== "bubble" || button.classList.contains("popped")) return;
+  button.classList.add("popped");
+  button.textContent = "＊";
+  activeMiniGame.popped += 1;
+  const countEl = document.getElementById("miniCount");
+  if (countEl) countEl.textContent = activeMiniGame.popped;
+  playTone(640 + activeMiniGame.popped * 30, 0.06, "sine", 0.025);
+  if (activeMiniGame.popped >= activeMiniGame.goal) finishBubbleGame(true);
+}
+
+function finishStarGame(success) {
+  if (!activeMiniGame || activeMiniGame.type !== "star") return;
+  if (success) {
+    addCoins(10);
+    state.happy = clamp(state.happy + 10);
+    addGrowth(1.5);
+    say("星あつめ成功！進化が進んだ");
+    miniResult("星あつめ", "10秒以内に星を10個集めた！進化が進む", true);
+  } else {
+    addCoins(2);
+    state.energy = clamp(state.energy - 4);
+    say("星が集めきれなかった");
+    miniResult("星あつめ", "10個集める前に時間切れ。少しだけコインゲット", false);
+  }
+  render();
+}
+
+function collectStar(button) {
+  if (!activeMiniGame || activeMiniGame.type !== "star" || button.classList.contains("collected")) return;
+  button.classList.add("collected");
+  button.textContent = "✓";
+  activeMiniGame.collected += 1;
+  const countEl = document.getElementById("miniCount");
+  if (countEl) countEl.textContent = activeMiniGame.collected;
+  playTone(720 + activeMiniGame.collected * 12, 0.05, "triangle", 0.025);
+  if (activeMiniGame.collected >= activeMiniGame.goal) finishStarGame(true);
+}
+
+function rhythmTap() {
+  const game = activeMiniGame && activeMiniGame.type === "rhythm" ? activeMiniGame : { startedAt: Date.now(), beat: 980 };
+  const elapsed = Date.now() - game.startedAt;
+  const offset = Math.abs((elapsed % game.beat) - game.beat / 2);
+  if (offset < 105) {
+    addCoins(9);
+    state.happy = clamp(state.happy + 30);
+    addGrowth(0.8);
+    say("リズムぴったり！ごきげんめっちゃアップ");
+    miniResult("リズム", "ぴったり！ごきげんがめっちゃ上がった", true);
+  } else if (offset < 245) {
+    addCoins(4);
+    state.happy = clamp(state.happy + 15);
+    addGrowth(0.45);
+    say("ちょっとずれたけど成功！");
+    miniResult("リズム", "少しずれたけど成功。ごきげん半分アップ", true);
+  } else {
+    state.energy = clamp(state.energy - 4);
+    say("タイミングがずれた");
+    miniResult("リズム", "タイミングが大きくずれて失敗", false);
+  }
+  render();
+}
+
+function stepMaze(index, button) {
+  if (!activeMiniGame || activeMiniGame.type !== "treasure") return;
+  const next = activeMiniGame.path[activeMiniGame.step + 1];
+  if (Number(index) !== next) {
+    state.energy = clamp(state.energy - 5);
+    say("迷路で行き止まり！");
+    miniResult("宝箱迷路", "道を外れてしまった。光る道を順番に進もう", false);
+    render();
+    return;
+  }
+  activeMiniGame.step += 1;
+  button.classList.add("done");
+  playTone(520 + activeMiniGame.step * 24, 0.06, "triangle", 0.025);
+  if (activeMiniGame.step === activeMiniGame.path.length - 1) {
+    addCoins(18);
+    addGrowth(0.65);
+    say("宝箱迷路クリア！コイン多め");
+    miniResult("宝箱迷路", "迷路をクリアして宝箱を開けた！18コイン", true);
+    render();
+  }
+}
+
+function startBalanceLoop() {
+  clearMiniTimer();
+  const duration = 7;
+  const endAt = Date.now() + duration * 1000;
+  miniTimer = window.setInterval(() => {
+    if (!activeMiniGame || activeMiniGame.type !== "balance") {
+      clearMiniTimer();
+      return;
+    }
+    activeMiniGame.tilt += (Math.random() - 0.5) * 24;
+    activeMiniGame.tilt = Math.max(-100, Math.min(100, activeMiniGame.tilt));
+    updateBalanceView();
+    const left = Math.max(0, Math.ceil((endAt - Date.now()) / 1000));
+    const timerEl = document.getElementById("miniTimer");
+    if (timerEl) timerEl.textContent = left;
+    if (Math.abs(activeMiniGame.tilt) > 82) finishBalanceGame(false);
+    if (left <= 0) finishBalanceGame(true);
+  }, 350);
+}
+
+function updateBalanceView() {
+  const tilt = activeMiniGame && activeMiniGame.type === "balance" ? activeMiniGame.tilt : 0;
+  const board = document.querySelector(".balance-board");
+  const person = document.getElementById("balancePerson");
+  const needle = document.getElementById("balanceNeedle");
+  if (board) board.style.transform = `rotate(${tilt / 6}deg)`;
+  if (person) person.style.transform = `translateX(${tilt * 0.9}px)`;
+  if (needle) needle.style.left = `${50 + tilt / 2}%`;
+}
+
+function nudgeBalance(direction) {
+  if (!activeMiniGame || activeMiniGame.type !== "balance") return;
+  activeMiniGame.tilt += direction === "left" ? -24 : 24;
+  activeMiniGame.tilt = Math.max(-100, Math.min(100, activeMiniGame.tilt));
+  playTone(360, 0.04, "square", 0.02);
+  updateBalanceView();
+}
+
+function finishBalanceGame(success) {
+  if (!activeMiniGame || activeMiniGame.type !== "balance") return;
+  clearMiniTimer();
+  if (success) {
+    addCoins(8);
+    state.energy = clamp(state.energy + 20);
+    addGrowth(0.55);
+    say("バランス成功！立ち続けられた");
+    miniResult("バランス", "最後まで立ち続けた！げんきアップ", true);
+  } else {
+    state.happy = clamp(state.happy - 6);
+    say("バランスを崩した");
+    miniResult("バランス", "大きく傾いて落ちちゃった", false);
+  }
+  render();
+}
+
+function pickColorCard(button) {
+  if (!activeMiniGame || activeMiniGame.type !== "color" || button.classList.contains("flipped")) return;
+  const index = Number(button.dataset.colorCard);
+  const card = activeMiniGame.cards[index];
+  button.classList.add("flipped");
+  button.textContent = card.name;
+  activeMiniGame.picked.push(card.name);
+  playTone(520, 0.06, "triangle", 0.025);
+  if (activeMiniGame.picked.length < 2) return;
+  const success = activeMiniGame.picked[0] === activeMiniGame.picked[1];
+  if (success) {
+    addCoins(7);
+    state.hunger = clamp(state.hunger + 5);
+    state.happy = clamp(state.happy + 8);
+    state.energy = clamp(state.energy + 5);
+    state.clean = clamp(state.clean + 5);
+    addGrowth(0.7);
+    say("同じ色を2枚めくった！");
+    miniResult("色合わせ", "同じ色を2枚選べた！全体アップ", true);
+  } else {
+    state.happy = clamp(state.happy - 5);
+    say("違う色だった");
+    miniResult("色合わせ", "2枚の色が違った。もう一回チャレンジ", false);
+  }
   render();
 }
 
@@ -1066,16 +1409,14 @@ el.activityBody.addEventListener("click", (event) => {
   const button = event.target.closest("button");
   if (!button) return;
   if (button.dataset.activity === "close") closeActivity();
+  if (button.dataset.activity === "miniMenu") openMiniMenu();
   if (button.dataset.activity === "resolveBattle") resolveBattle();
   if (button.dataset.activity === "catchSnack") catchSnack();
+  if (button.dataset.activity === "missSnack") missSnack();
   if (button.dataset.activity === "skyJump") skyJump();
-  if (button.dataset.activity === "bubblePop") finishSimpleGame("bubble");
-  if (button.dataset.activity === "starCollect") finishSimpleGame("star");
-  if (button.dataset.activity === "rhythmTap") finishSimpleGame("rhythm");
-  if (button.dataset.activity === "treasureOpen") finishSimpleGame("treasure");
-  if (button.dataset.activity === "balanceTap") finishSimpleGame("balance");
-  if (button.dataset.activity === "colorMatch") finishSimpleGame("color");
+  if (button.dataset.activity === "rhythmTap") rhythmTap();
   if (button.dataset.battleLevel) openBattleView("", button.dataset.battleLevel);
+  if (button.dataset.buy) buy(button.dataset.buy);
   if (button.dataset.food === "free") {
     care("feedFree");
     openFoodMenu();
@@ -1095,13 +1436,14 @@ el.activityBody.addEventListener("click", (event) => {
   if (button.dataset.game) openMiniGame(button.dataset.game);
   if (button.dataset.pick) finishShellGame(button.dataset.pick);
   if (button.dataset.playPick) playToy(button.dataset.playPick);
+  if (button.dataset.bubble) popBubble(button);
+  if (button.dataset.star) collectStar(button);
+  if (button.dataset.maze) stepMaze(button.dataset.maze, button);
+  if (button.dataset.balance) nudgeBalance(button.dataset.balance);
+  if (button.dataset.colorCard) pickColorCard(button);
 });
 
 el.battleNow.addEventListener("click", openBattleView);
-
-document.querySelectorAll("[data-open='mini']").forEach((button) => {
-  button.addEventListener("click", openMiniMenu);
-});
 
 el.shop.forEach((button) => {
   button.addEventListener("click", () => buy(button.dataset.item));

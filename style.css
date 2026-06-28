@@ -680,6 +680,7 @@ meter::-webkit-meter-optimum-value {
 .play-action,
 .food-action,
 .use-action,
+.shop-action,
 .battle-now {
   color: #6b3f00;
   background: #ffeeb4;
@@ -951,6 +952,10 @@ meter::-webkit-meter-optimum-value {
   margin-top: 12px;
 }
 
+.activity-actions.single {
+  grid-template-columns: 1fr;
+}
+
 .activity-actions button {
   min-height: 48px;
 }
@@ -967,6 +972,45 @@ meter::-webkit-meter-optimum-value {
   color: #43505c;
   font-weight: 800;
   text-align: center;
+}
+
+.mini-status {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+  font-weight: 900;
+}
+
+.mini-status span {
+  padding: 8px 10px;
+  border: 2px solid rgba(36, 49, 58, 0.1);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.mini-outcome {
+  display: grid;
+  gap: 8px;
+  padding: 20px;
+  border: 2px solid rgba(36, 49, 58, 0.12);
+  border-radius: 8px;
+  text-align: center;
+  font-weight: 900;
+}
+
+.mini-outcome strong {
+  font-size: 1.6rem;
+}
+
+.mini-outcome.success {
+  background: #e8fff0;
+  color: #24623f;
+}
+
+.mini-outcome.fail {
+  background: #fff0f2;
+  color: #8b2530;
 }
 
 .big-game-row {
@@ -1041,9 +1085,11 @@ meter::-webkit-meter-optimum-value {
   width: 54px;
   height: 54px;
   border-radius: 50%;
+  border: 0;
   color: #b52230;
   background: #fff0f2;
   font-weight: 1000;
+  cursor: pointer;
   animation: snack-fall 1.8s linear infinite;
 }
 
@@ -1105,6 +1151,207 @@ meter::-webkit-meter-optimum-value {
   box-shadow: 0 10px 22px rgba(33, 55, 74, 0.08);
 }
 
+.bubble-game,
+.star-game {
+  position: relative;
+  min-height: 260px;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.bubble-game {
+  background: linear-gradient(180deg, #e8fbff, #8bdff0);
+}
+
+.bubble-target {
+  position: absolute;
+  bottom: -58px;
+  width: 54px;
+  height: 54px;
+  border: 3px solid rgba(82, 199, 233, 0.55);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  color: #2b8fb8;
+  cursor: pointer;
+  font-size: 1.4rem;
+  font-weight: 1000;
+  animation: bubble-rise 3.2s linear infinite;
+}
+
+.bubble-target.popped {
+  border-color: rgba(239, 111, 121, 0.8);
+  background: #fff0f6;
+  color: #ef6f79;
+  animation: bubble-pop 260ms ease-out forwards;
+  pointer-events: none;
+}
+
+.star-game {
+  background: linear-gradient(180deg, #29335c, #6675bf);
+}
+
+.collect-star {
+  position: absolute;
+  width: 48px;
+  height: 48px;
+  border: 2px solid rgba(255, 255, 255, 0.55);
+  border-radius: 50%;
+  background: #fff6a8;
+  color: #ad6b00;
+  cursor: pointer;
+  font-size: 1.35rem;
+  font-weight: 1000;
+  box-shadow: 0 0 18px rgba(255, 246, 168, 0.55);
+  animation: star-twinkle 700ms ease-in-out infinite alternate;
+}
+
+.collect-star.collected {
+  background: #dcffe9;
+  color: #24623f;
+  transform: scale(0.8);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.timing-ring {
+  position: relative;
+  width: 150px;
+  height: 150px;
+  border: 4px solid rgba(36, 49, 58, 0.14);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.timing-ring::after {
+  content: "";
+  position: absolute;
+  inset: 48px;
+  border: 4px solid #f5bb47;
+  border-radius: 50%;
+}
+
+.timing-ring span {
+  position: absolute;
+  inset: 8px;
+  border: 5px solid rgba(239, 111, 121, 0.82);
+  border-radius: 50%;
+  animation: timing-hit 980ms ease-in-out infinite;
+}
+
+.maze-game {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 7px;
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+.maze-cell {
+  min-height: 54px;
+  border: 2px solid rgba(36, 49, 58, 0.14);
+  border-radius: 8px;
+  background: #5c677d;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 1000;
+}
+
+.maze-cell.path {
+  background: #fff7d6;
+  color: #6b3f00;
+}
+
+.maze-cell.done {
+  background: #8fe0a4;
+  color: #1f5c39;
+}
+
+.balance-game {
+  display: grid;
+  gap: 18px;
+  place-items: center;
+  min-height: 220px;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #f8fdff, #fff8d6);
+  overflow: hidden;
+}
+
+.balance-board {
+  position: relative;
+  width: min(340px, 82vw);
+  height: 18px;
+  border-radius: 999px;
+  background: #7d6b50;
+  transform-origin: center;
+  transition: transform 120ms ease;
+}
+
+.balance-board span {
+  position: absolute;
+  left: calc(50% - 18px);
+  bottom: 18px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 58px;
+  border-radius: 18px 18px 8px 8px;
+  background: #ffeeb4;
+  box-shadow: 0 8px 0 rgba(33, 55, 74, 0.1);
+  transition: transform 120ms ease;
+}
+
+.balance-meter {
+  position: relative;
+  width: min(320px, 80vw);
+  height: 12px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #ef6f79, #7edc86 42% 58%, #ef6f79);
+}
+
+.balance-meter span {
+  position: absolute;
+  top: -7px;
+  width: 10px;
+  height: 26px;
+  border-radius: 999px;
+  background: #24313a;
+  transform: translateX(-50%);
+}
+
+.balance-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.balance-controls button,
+.color-card {
+  min-height: 58px;
+  border: 2px solid rgba(36, 49, 58, 0.14);
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  font-weight: 1000;
+}
+
+.color-game {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.color-card {
+  min-height: 142px;
+  font-size: 2rem;
+  background: linear-gradient(160deg, #ffffff, #e7fbff);
+}
+
+.color-card.flipped {
+  background: var(--card-color);
+  color: #24313a;
+}
+
 .play-arena {
   position: relative;
   min-height: 220px;
@@ -1141,7 +1388,7 @@ meter::-webkit-meter-optimum-value {
 
 .panels {
   display: grid;
-  grid-template-columns: 1.25fr 0.9fr 0.8fr 1fr;
+  grid-template-columns: 0.9fr 1fr;
   gap: 14px;
   margin-top: 14px;
 }
@@ -1179,6 +1426,10 @@ meter::-webkit-meter-optimum-value {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.activity-shop {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .inventory {
   grid-template-columns: 1fr;
 }
@@ -1199,6 +1450,17 @@ meter::-webkit-meter-optimum-value {
   display: block;
   color: var(--rose);
   font-size: 1.5rem;
+}
+
+.shop-item strong,
+.shop-item small {
+  display: block;
+}
+
+.shop-item small {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.76rem;
 }
 
 .inventory-item {
@@ -1272,25 +1534,23 @@ meter::-webkit-meter-optimum-value {
   line-height: 1.45;
 }
 
-.decor-flower::after,
-.decor-star::after {
+.decor-layer {
   position: absolute;
-  bottom: 116px;
+  inset: 0;
+  pointer-events: none;
+}
+
+.decor-piece {
+  position: absolute;
   font-size: 2.2rem;
   filter: drop-shadow(0 8px 0 rgba(37, 82, 55, 0.12));
 }
 
-.decor-flower::after {
-  content: "✿";
-  left: calc(50% - 190px);
+.decor-piece.flower {
   color: #ef6f79;
 }
 
-.decor-star::after {
-  content: "★";
-  top: 36px;
-  left: calc(50% - 88px);
-  bottom: auto;
+.decor-piece.star {
   color: #fff37a;
 }
 
@@ -1336,6 +1596,42 @@ meter::-webkit-meter-optimum-value {
   }
 }
 
+@keyframes bubble-rise {
+  from {
+    transform: translateY(0) scale(0.85);
+    opacity: 0.85;
+  }
+  to {
+    transform: translateY(-330px) scale(1.18);
+    opacity: 0.18;
+  }
+}
+
+@keyframes bubble-pop {
+  to {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+@keyframes star-twinkle {
+  to {
+    transform: scale(1.12) rotate(8deg);
+  }
+}
+
+@keyframes timing-hit {
+  0%,
+  100% {
+    transform: scale(1.25);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(0.38);
+    opacity: 1;
+  }
+}
+
 @media (max-width: 960px) {
   .controls {
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1357,24 +1653,91 @@ meter::-webkit-meter-optimum-value {
 @media (max-width: 760px) {
   .app-shell {
     width: min(100vw - 18px, 520px);
-    padding-top: 12px;
+    padding-top: 8px;
   }
 
   .topbar {
     align-items: flex-end;
+    margin-bottom: 8px;
+  }
+
+  h1 {
+    font-size: 2rem;
+  }
+
+  .eyebrow {
+    font-size: 0.66rem;
+  }
+
+  .field-tabs {
+    margin-bottom: 8px;
+  }
+
+  .field-tab {
+    min-height: 34px;
   }
 
   .screen {
-    min-height: 390px;
+    min-height: 275px;
+  }
+
+  .sun {
+    top: 22px;
+    right: 34px;
+    width: 52px;
+  }
+
+  .cloud {
+    transform: scale(0.72);
+  }
+
+  .cloud-a {
+    top: 38px;
+    left: 8px;
+  }
+
+  .cloud-b {
+    top: 74px;
+    right: 60px;
   }
 
   .tree {
     left: 26px;
+    bottom: 92px;
+    transform: scale(0.78) rotate(-6deg);
   }
 
   .pond {
     right: 20px;
     width: 120px;
+    bottom: 64px;
+  }
+
+  .island::before {
+    bottom: 18px;
+    height: 122px;
+  }
+
+  .pet-button,
+  .pet-button.baby,
+  .pet-button.kid,
+  .pet-button.teen,
+  .pet-button.adult,
+  .pet-button.champion,
+  .pet-button.legend,
+  .pet-button.moon,
+  .pet-button.flowerForm,
+  .pet-button.dragon,
+  .pet-button.cosmic {
+    bottom: 78px;
+    width: 118px;
+    height: 126px;
+  }
+
+  .speech {
+    bottom: 10px;
+    padding: 8px 10px;
+    font-size: 0.84rem;
   }
 
   .progress-card,
@@ -1391,6 +1754,30 @@ meter::-webkit-meter-optimum-value {
     grid-column: 1 / -1;
     order: 3;
   }
+
+  .progress-card {
+    gap: 8px;
+    margin: 8px 0;
+    padding: 9px;
+  }
+
+  .stats {
+    gap: 6px;
+    margin: 8px 0;
+  }
+
+  .stat {
+    padding: 8px;
+  }
+
+  .stat span {
+    margin-bottom: 4px;
+    font-size: 0.72rem;
+  }
+
+  meter {
+    height: 10px;
+  }
 }
 
 @media (max-width: 520px) {
@@ -1404,12 +1791,19 @@ meter::-webkit-meter-optimum-value {
   }
 
   .controls {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
   }
 
   .action {
-    min-height: 70px;
-    font-size: 0.88rem;
+    min-height: 54px;
+    padding: 6px 4px;
+    font-size: 0.72rem;
+  }
+
+  .action span {
+    margin-bottom: 1px;
+    font-size: 1.15rem;
   }
 
   .panel,
@@ -1425,6 +1819,10 @@ meter::-webkit-meter-optimum-value {
     grid-template-columns: 1fr;
   }
 
+  .activity-shop {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .name-row {
     flex-direction: column;
   }
@@ -1437,5 +1835,44 @@ meter::-webkit-meter-optimum-value {
   .moving-strawberry,
   .wrong-play {
     min-height: 96px;
+  }
+
+  .activity {
+    margin-top: 8px;
+  }
+
+  .activity-head {
+    padding: 8px 10px;
+  }
+
+  .activity-body {
+    padding: 10px;
+  }
+
+  .choice-grid {
+    gap: 8px;
+  }
+
+  .choice-grid button {
+    min-height: 74px;
+    padding: 8px;
+  }
+
+  .choice-grid strong {
+    font-size: 0.9rem;
+  }
+
+  .choice-grid span {
+    font-size: 0.75rem;
+  }
+
+  .bubble-game,
+  .star-game,
+  .fall-game {
+    min-height: 210px;
+  }
+
+  .color-card {
+    min-height: 104px;
   }
 }

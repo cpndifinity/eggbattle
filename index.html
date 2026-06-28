@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>たまバト</title>
-    <link rel="stylesheet" href="./style.css?v=9" />
+    <link rel="stylesheet" href="./style.css?v=10" />
   </head>
   <body>
     <main class="app-shell">
@@ -38,6 +38,7 @@
         <div class="island">
           <div class="tree" aria-hidden="true"></div>
           <div class="pond" aria-hidden="true"></div>
+          <div id="decorLayer" class="decor-layer" aria-hidden="true"></div>
           <button id="petButton" class="pet-button egg" type="button" aria-label="ペット">
             <span class="crest"></span>
             <span class="pet-face">
@@ -98,6 +99,10 @@
           <span>🎒</span>
           つかう
         </button>
+        <button class="action shop-action" data-action="shopMenu" type="button">
+          <span>🛒</span>
+          ショップ
+        </button>
         <button class="action" data-action="miniMenu" type="button">
           <span>🎮</span>
           ミニゲーム
@@ -143,59 +148,6 @@
       <section id="panels" class="panels">
         <article class="panel">
           <div class="panel-head">
-            <h2>ショップ</h2>
-            <p>押すと買える</p>
-          </div>
-          <div class="shop">
-            <button class="shop-item" data-item="feast" type="button">
-              <span>🍱</span>
-              買う ごちそう 24
-            </button>
-            <button class="shop-item" data-item="cake" type="button">
-              <span>🍰</span>
-              買う ケーキ 18
-            </button>
-            <button class="shop-item" data-item="purpleDrink" type="button">
-              <span class="swatch purple"></span>
-              買う 紫になーる 42
-            </button>
-            <button class="shop-item" data-item="blueDrink" type="button">
-              <span class="swatch blue"></span>
-              買う 水色になーる 42
-            </button>
-            <button class="shop-item" data-item="yellowDrink" type="button">
-              <span class="swatch yellow"></span>
-              買う 黄色になーる 42
-            </button>
-            <button class="shop-item" data-item="deepBlueDrink" type="button">
-              <span class="swatch deep-blue"></span>
-              買う 青になーる 42
-            </button>
-            <button class="shop-item" data-item="greenDrink" type="button">
-              <span class="swatch green"></span>
-              買う 緑になーる 42
-            </button>
-            <button class="shop-item" data-item="redDrink" type="button">
-              <span class="swatch red"></span>
-              買う 赤になーる 42
-            </button>
-            <button class="shop-item" data-item="careCharm" type="button">
-              <span>✦</span>
-              買う ミスけし 1000
-            </button>
-            <button class="shop-item" data-item="flower" type="button">
-              <span>✿</span>
-              買う 花 28
-            </button>
-            <button class="shop-item" data-item="star" type="button">
-              <span>★</span>
-              買う 星 45
-            </button>
-          </div>
-        </article>
-
-        <article class="panel">
-          <div class="panel-head">
             <h2>もちもの</h2>
             <p>上の「つかう」から選ぶ</p>
           </div>
@@ -212,14 +164,6 @@
           </div>
         </article>
 
-        <article class="panel">
-          <div class="panel-head">
-            <h2>ミニゲーム</h2>
-            <p>9つから選べる</p>
-          </div>
-          <button class="battle-now" data-open="mini" type="button">ミニゲームを選ぶ</button>
-        </article>
-
         <article class="panel battle-log-panel">
           <div class="panel-head">
             <h2>バトル</h2>
@@ -231,6 +175,6 @@
       </section>
     </main>
 
-    <script src="./app.js?v=9"></script>
+    <script src="./app.js?v=10"></script>
   </body>
 </html>
